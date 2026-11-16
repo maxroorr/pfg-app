@@ -1,0 +1,29 @@
+name: Build PFG app
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.7' }
+      - name: Sign with a fresh key
+        run: |
+          echo "KS_PASS=$(openssl rand -hex 12)" >> $GITHUB_ENV
+      - name: Build
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -alias pfg -keyalg RSA -keysize 2048 -validity 10000 -storepass "$KS_PASS" -keypass "$KS_PASS" -dname "CN=PFG, O=PFG Prize Fund Global"
+          KS_FILE="$RUNNER_TEMP/release.jks" gradle --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk pfg.apk
+      - name: Publish
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          gh release delete latest -y --cleanup-tag || true
+          gh release create latest pfg.apk --title "PFG app" --notes "Latest PFG Android app" --latest
