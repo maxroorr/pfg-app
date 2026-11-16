@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.pfgchain.app'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.pfgchain.app'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('KS_FILE') ?: 'release.jks')
+            storePassword System.getenv('KS_PASS') ?: 'changeit'
+            keyAlias 'pfg'
+            keyPassword System.getenv('KS_PASS') ?: 'changeit'
+        }
+    }
+    buildTypes { release { signingConfig signingConfigs.release; minifyEnabled false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
